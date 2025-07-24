@@ -1,0 +1,16 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /apartment-building
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driverClassName: "com.mysql.cj.jdbc.Driver"
+  jpa:
+    show-sql: true
+
+jwt:
+  signerKey: "QU+SwOanBr5XdqvBrRMEu07JkXekyENmTcEpklJ2hSB3QjE/hicft/WwBl1JK+v/"
