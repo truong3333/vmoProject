@@ -23,7 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINT = {"/users",
-            "auth/token"
+            "auth/token",
     };
 
     @Value("${jwt.signerKey}")
@@ -32,7 +32,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.POST,PUBLIC_ENDPOINT).permitAll()
+//                .requestMatchers(HttpMethod.POST,PUBLIC_ENDPOINT).permitAll()
                         .anyRequest().permitAll());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.disable());

@@ -8,6 +8,7 @@ import com.example.vmoProject.domain.dto.response.UserResponse;
 import com.example.vmoProject.domain.entity.User;
 import com.example.vmoProject.exception.AppException;
 import com.example.vmoProject.exception.ErrorCode;
+import com.example.vmoProject.repository.RoleRepository;
 import com.example.vmoProject.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserService {
     UserRepository userRepository;
+    RoleRepository roleRepository;
     PasswordEncoder passwordEncoder;
 
     public UserResponse createUser(UserCreateRequest request){
@@ -34,10 +37,16 @@ public class UserService {
             log.error("User with username {} already exists, create failed!", request.getUsername());
             throw new AppException(ErrorCode.USER_EXISTED);
         }
+        var roles = roleRepository.findAllById(request.getRoles());
+        if(roles.isEmpty()){
+            log.error("No role found in the system, create user failed.");
+            throw new AppException(ErrorCode.ROLE_NOT_FOUND);
+        }
 
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoles(new HashSet<>(roles));
 
         UserDetail userDetail = new UserDetail();
         userDetail.setEmail(request.getEmail());
@@ -61,6 +70,7 @@ public class UserService {
                 .email(userDetail.getEmail())
                 .phone(userDetail.getPhone())
                 .fullName(userDetail.getFullName())
+                .roles(user.getRoles())
                 .build();
     }
 
@@ -68,10 +78,10 @@ public class UserService {
         List<User> listAllUsers = new ArrayList<>(userRepository.findAll());
         if (listAllUsers.isEmpty()) {
             log.warn("No users found in the system.");
-            return new ArrayList<>();
-        }else{
-            log.info("Admin has retrieved the list of all users");
+            throw new AppException(ErrorCode.LIST_USER_NULL);
         }
+
+        log.info("Admin has retrieved the list of all users");
         return listAllUsers.stream()
                 .map(user ->
                 {
@@ -79,6 +89,7 @@ public class UserService {
                     return UserResponseForAdmin.builder()
                             .id(user.getId())
                             .username(user.getUsername())
+                            .roles(user.getRoles())
                             .fullName(userDetail.getFullName())
                             .email(userDetail.getEmail())
                             .phone(userDetail.getPhone())
@@ -96,12 +107,15 @@ public class UserService {
 
         User user = userRepository.findById(userId).orElseThrow(() -> {
             log.error("User with ID: {} not found, update User failed!", userId);
-           return new RuntimeException("User not found");
+           throw new RuntimeException("User not found");
         });
+
+        var roles = roleRepository.findAllById(request.getRoles());
 
         UserDetail userDetail = user.getUserDetail();
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoles(new HashSet<>(roles));
         userDetail.setEmail(request.getEmail());
         userDetail.setFullName(request.getFullName());
         userDetail.setPhone(request.getPhone());
@@ -122,6 +136,7 @@ public class UserService {
                 .email(userDetail.getEmail())
                 .phone(userDetail.getPhone())
                 .fullName(userDetail.getFullName())
+                .roles(user.getRoles())
                 .build();
     }
 
