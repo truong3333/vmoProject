@@ -11,8 +11,26 @@ spring:
     driverClassName: "com.mysql.cj.jdbc.Driver"
   jpa:
     hibernate:
-      ddl: auto
-    show-sql: true
+      ddl-auto: update
+    show-sql: false
+  redis:
+    host: redis
+    post: 6379
+    password: default
+    timeout: 3000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 1
+        max-wait: -1
+  cache:
+    type: redis
+
+logging:
+  level:
+    org.springframework.data.redis: DEBUG
+    redis.clients.jedis: DEBUG
 
 jwt:
   signerKey: "QU+SwOanBr5XdqvBrRMEu07JkXekyENmTcEpklJ2hSB3QjE/hicft/WwBl1JK+v/"

@@ -25,5 +25,4 @@ public class UserCreateRequest {
     String gender;
     LocalDate dob;
 
-    List<String> roles;
 }

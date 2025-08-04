@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -18,10 +19,10 @@ public class Apartment {
     Double area;
     String address;
 
-    @OneToMany(mappedBy = "apartment")
-    List<ApartmentHistory> listResidents;
-    
-    @OneToMany(mappedBy = "apartment")
-    List<Cost> listCosts;
+    @OneToMany(mappedBy = "apartment",cascade = CascadeType.ALL)
+    List<ApartmentHistory> listApartmentHistory = new ArrayList<>();
+
+    @OneToMany(mappedBy = "apartment",cascade = CascadeType.ALL)
+    List<MonthlyCost> listMonthlyCost = new ArrayList<>();
 
 }

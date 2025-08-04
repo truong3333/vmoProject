@@ -8,8 +8,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ApiResponse<T> {
-    int code = 1000;
-    T result;
-
+public class CostResponse {
+    String type;
+    String description;
+    Double amount;
 }

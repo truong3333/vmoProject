@@ -1,29 +1,30 @@
 package com.example.vmoProject.controller;
 
 import com.example.vmoProject.domain.dto.request.AuthenticationRequest;
-import com.example.vmoProject.domain.dto.response.ApiResponse;
+import com.example.vmoProject.domain.dto.response.ApiResponses;
 import com.example.vmoProject.domain.dto.response.AuthenticationResponse;
 import com.example.vmoProject.service.AuthenticationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@Tag(name = "Authentication", description = "Quản lý đăng nhập")
 public class AuthenticationController {
     AuthenticationService authenticationService;
 
     @PostMapping("/token")
-    ApiResponse<AuthenticationResponse >authenticated(AuthenticationRequest request){
+    ApiResponses<AuthenticationResponse > authenticated(@RequestBody AuthenticationRequest request){
         var result = authenticationService.authenticate(request);
-        return ApiResponse.<AuthenticationResponse>builder()
+        return ApiResponses.<AuthenticationResponse>builder()
                 .result(result)
                 .build();
     }
+
 
 }

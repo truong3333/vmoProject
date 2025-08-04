@@ -1,17 +1,15 @@
 package com.example.vmoProject.domain.dto.response;
 
-import com.example.vmoProject.domain.entity.Role;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.Set;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserResponse {
-    String username;
-    String fullName;
+public class ApiResponses<T> {
+    int code = 1000;
+    T result;
+
 }

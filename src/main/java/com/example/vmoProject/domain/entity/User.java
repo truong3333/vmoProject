@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public class User {
     String password;
 
     @OneToMany(mappedBy = "user")
-    List<ApartmentHistory> listApartmentHistory;
+    List<ApartmentHistory> listApartmentHistory = new ArrayList<>();
 
     @ManyToMany
     Set<Role> roles;

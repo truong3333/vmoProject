@@ -10,6 +10,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,9 +25,11 @@ import java.util.stream.Collectors;
 public class PermissionService {
     PermissionRepository permissionRepository;
 
-    public PermissionResponse create(PermissionRequest request){
+    @PreAuthorize("hasRole('ADMIN')")
+//    @CacheEvict(value = "permissions", allEntries = true)
+    public String create(PermissionRequest request){
         if(permissionRepository.existsByName(request.getName())){
-            log.error("Permission: {} already exists, create failed.");
+            log.error("Permission: {} already exists, create failed.",request.getName());
             throw new AppException(ErrorCode.PERMISSION_EXISTED);
         }
         Permission permission = new Permission(request.getName(), request.getDescription());
@@ -32,12 +37,11 @@ public class PermissionService {
         permissionRepository.save(permission);
         log.info("Permission: {} create successfully",permission.getName());
 
-        return PermissionResponse.builder()
-                .name(permission.getName())
-                .description(permission.getDescription())
-                .build();
+        return "Permission: " + permission.getName() + " create successfully";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+//    @Cacheable(value = "permissions")
     public List<PermissionResponse> getAll(){
         List<Permission> permissions = permissionRepository.findAll();
 

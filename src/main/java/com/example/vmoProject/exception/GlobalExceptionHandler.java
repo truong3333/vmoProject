@@ -1,7 +1,8 @@
 package com.example.vmoProject.exception;
 
-import com.example.vmoProject.domain.dto.response.ApiResponse;
+import com.example.vmoProject.domain.dto.response.ApiResponses;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,22 +11,42 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = RuntimeException.class)
-    ResponseEntity<ApiResponse> RuntimeExceptionHandling(RuntimeException exception){
-        ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setCode(1001);
-        apiResponse.setResult(exception.getMessage());
-        return ResponseEntity.badRequest().body(apiResponse);
+    ResponseEntity<ApiResponses> RuntimeExceptionHandling(RuntimeException exception){
+        ApiResponses apiResponses = ApiResponses.builder()
+                .code(999)
+                .result(exception.getMessage())
+                .build();
+        return ResponseEntity.badRequest().body(apiResponses);
+    }
+
+    @ExceptionHandler(value = AppException.class)
+    ResponseEntity<ApiResponses> AppExceptionHandling(AppException exception){
+        ApiResponses apiResponses = ApiResponses.builder()
+                .code(exception.getErrorCode().getCode())
+                .result(exception.getErrorCode().getMessage())
+                .build();
+        return ResponseEntity.status(exception.getErrorCode().getStatusCode()).body(apiResponses);
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
-    ResponseEntity<ApiResponse> MethodArgumentNotValidExceptionHandling(MethodArgumentNotValidException exception){
+    ResponseEntity<ApiResponses> MethodArgumentNotValidExceptionHandling(MethodArgumentNotValidException exception){
         String enumKey = exception.getFieldError().getDefaultMessage();
         ErrorCode errorCode = ErrorCode.INVALID_KEY;
         errorCode = ErrorCode.valueOf(enumKey);
 
-        ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setCode(errorCode.getCode());
-        apiResponse.setResult(errorCode.getMessage());
-        return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
+        ApiResponses apiResponses = ApiResponses.builder()
+                .code(errorCode.getCode())
+                .result(errorCode.getMessage())
+                .build();
+        return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponses);
+    }
+
+    @ExceptionHandler(value = AccessDeniedException.class)
+    ResponseEntity<ApiResponses> AccessDeniedExceptionHandling(AccessDeniedException exception){
+        ApiResponses apiResponses = ApiResponses.builder()
+                .code(999)
+                .result(exception.getMessage())
+                .build();
+        return ResponseEntity.badRequest().body(apiResponses);
     }
 }

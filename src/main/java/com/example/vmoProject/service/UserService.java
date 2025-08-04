@@ -1,6 +1,9 @@
 package com.example.vmoProject.service;
 
+import com.example.vmoProject.domain.dto.response.PermissionResponse;
+import com.example.vmoProject.domain.dto.response.RoleResponse;
 import com.example.vmoProject.domain.dto.response.UserResponseForAdmin;
+import com.example.vmoProject.domain.entity.Role;
 import com.example.vmoProject.domain.entity.UserDetail;
 import com.example.vmoProject.domain.dto.request.UserCreateRequest;
 import com.example.vmoProject.domain.dto.request.UserUpdateRequest;
@@ -14,12 +17,17 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -32,21 +40,24 @@ public class UserService {
     RoleRepository roleRepository;
     PasswordEncoder passwordEncoder;
 
+//    @CacheEvict(value = "users", key = "#result.username", condition = "#result != null")
     public UserResponse createUser(UserCreateRequest request){
         if(userRepository.existsByUsername(request.getUsername())){
             log.error("User with username {} already exists, create failed!", request.getUsername());
             throw new AppException(ErrorCode.USER_EXISTED);
         }
-        var roles = roleRepository.findAllById(request.getRoles());
-        if(roles.isEmpty()){
-            log.error("No role found in the system, create user failed.");
-            throw new AppException(ErrorCode.ROLE_NOT_FOUND);
-        }
+        Role role = roleRepository.findByName("RESIDENT").orElseThrow(() -> {
+                log.error("No role found in the system, create user failed.");
+                throw new AppException(ErrorCode.ROLE_NOT_FOUND);
+        });
+
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
 
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(new HashSet<>(roles));
+        user.setRoles(roles);
 
         UserDetail userDetail = new UserDetail();
         userDetail.setEmail(request.getEmail());
@@ -65,17 +76,14 @@ public class UserService {
         log.info("User {} created successfully!", user.getUsername());
 
         return UserResponse.builder()
-                .id(user.getId())
                 .username(user.getUsername())
-                .email(userDetail.getEmail())
-                .phone(userDetail.getPhone())
                 .fullName(userDetail.getFullName())
-                .roles(user.getRoles())
                 .build();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponseForAdmin> getAllUsers(){
-        List<User> listAllUsers = new ArrayList<>(userRepository.findAll());
+        List<User> listAllUsers = userRepository.findAll();
         if (listAllUsers.isEmpty()) {
             log.warn("No users found in the system.");
             throw new AppException(ErrorCode.LIST_USER_NULL);
@@ -89,11 +97,23 @@ public class UserService {
                     return UserResponseForAdmin.builder()
                             .id(user.getId())
                             .username(user.getUsername())
-                            .roles(user.getRoles())
+                            .roles(user.getRoles().stream().map(role ->
+                                    RoleResponse.builder()
+                                    .name(role.getName())
+                                    .description(role.getDescription())
+                                    .permissions(role.getPermissions().stream()
+                                            .map(permission ->
+                                                    PermissionResponse.builder()
+                                                    .name(permission.getName())
+                                                    .description(permission.getDescription())
+                                                    .build())
+                                            .collect(Collectors.toSet()))
+                                    .build()).collect(Collectors.toSet())
+                            )
                             .fullName(userDetail.getFullName())
                             .email(userDetail.getEmail())
                             .phone(userDetail.getPhone())
-                            .CMND(userDetail.getCMND())
+                            .cmnd(userDetail.getCMND())
                             .address(userDetail.getAddress())
                             .gender(userDetail.getGender())
                             .dob(userDetail.getDob())
@@ -102,6 +122,36 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @PreAuthorize("hasAnyRole('RESIDENT','ADMIN')")
+    public UserResponse getMyInfo(){
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(name).orElseThrow(() -> {
+            log.error("Username: {} not found, get info failed.", name);
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        });
+
+        return UserResponse.builder()
+                .username(name)
+                .fullName(user.getUserDetail().getFullName())
+                .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+//    @Cacheable(value = "users", key = "#username")
+    public UserResponse getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        UserDetail userDetail = user.getUserDetail();
+        return UserResponse.builder()
+                .username(user.getUsername())
+                .fullName(userDetail.getFullName())
+                .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+//    @CacheEvict(value = "users", key = "#userId")
     public UserResponse updateUser(String userId,UserUpdateRequest request){
 
 
@@ -131,19 +181,17 @@ public class UserService {
         log.info("User with ID: {} updated successfully!", userId);
 
         return UserResponse.builder()
-                .id(user.getId())
                 .username(user.getUsername())
-                .email(userDetail.getEmail())
-                .phone(userDetail.getPhone())
                 .fullName(userDetail.getFullName())
-                .roles(user.getRoles())
                 .build();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+//    @CacheEvict(value = "users", key = "#userId")
     public void deleteUser(String userId){
         if (!userRepository.existsById(userId)) {
             log.error("User with ID: {} not found, delete User failed!", userId);
-            throw new RuntimeException("User not found");
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
         }
         userRepository.deleteById(userId);
     }

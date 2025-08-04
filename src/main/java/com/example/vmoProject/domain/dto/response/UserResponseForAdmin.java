@@ -1,6 +1,5 @@
 package com.example.vmoProject.domain.dto.response;
 
-import com.example.vmoProject.domain.entity.Role;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -18,10 +17,10 @@ public class UserResponseForAdmin {
     String fullName;
     String email;
     String phone;
-    String CMND;
+    String cmnd;
     String address;
     String gender;
     LocalDate dob;
 
-    Set<Role> roles;
+    Set<RoleResponse> roles;
 }

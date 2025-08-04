@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -16,18 +17,11 @@ public class Cost {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
-    String name;
-    int electricityUsage;
-    int waterUsage;
-    Double electricityCost;
-    Double waterCost;
-    Double otherCost;
+    String type;
     String description;
-    Double totalCost;
-    LocalDate paymentDate;
-    String paymentStatus;
+    Double amount;
 
     @ManyToOne
-    @JoinColumn(name = "apartment_id")
-    Apartment apartment;
+    @JoinColumn(name = "monthly_id")
+    MonthlyCost monthlyCost;
 }
